@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard - Attendance System</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .dashboard-wrapper {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, var(--card) 0%, #f8fafc 100%);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      z-index: 50;
+      transition: transform 0.3s;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.25rem;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .sidebar-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .sidebar-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      color: var(--text-light);
+      text-decoration: none;
+      font-weight: 500;
+      border-radius: 10px;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sidebar-nav a::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--primary);
+      transform: scaleY(0);
+      transition: transform 0.2s;
+    }
+
+    .sidebar-nav a:hover {
+      background: rgba(99, 102, 241, 0.05);
+      color: var(--primary);
+    }
+
+    .sidebar-nav a:hover::before {
+      transform: scaleY(1);
+    }
+
+    .sidebar-nav a.active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(129, 140, 248, 0.1) 100%);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .sidebar-nav a.active::before {
+      transform: scaleY(1);
+    }
+
+    .sidebar-nav a .nav-icon {
+      font-size: 1.25rem;
+      width: 24px;
+      text-align: center;
+    }
+
+    .main-content {
+      margin-left: 260px;
+      flex: 1;
+      min-height: 100vh;
+    }
+
+    .top-bar {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .top-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text);
+      padding: 0.5rem;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .menu-toggle:hover {
+      background: var(--bg);
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .user-avatar:hover {
+      transform: scale(1.1);
+    }
+
+    .user-info {
+      display: none;
+    }
+
+    .user-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+
+    .user-role {
+      font-size: 0.8rem;
+      color: var(--text-light);
+    }
+
+    .content-area {
+      padding: 2rem;
+    }
+
+    .welcome-banner {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: 16px;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .welcome-banner::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+      border-radius: 50%;
+    }
+
+    .welcome-banner h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      position: relative;
+    }
+
+    .welcome-banner p {
+      opacity: 0.9;
+      position: relative;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, var(--card) 0%, #f8fafc 100%);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      border-left: 5px solid var(--primary);
+      transition: all 0.3s;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
+      border-radius: 50%;
+      transition: all 0.3s;
+    }
+
+    .stat-card:hover::before {
+      transform: scale(1.5);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    }
+
+    .stat-card.success { border-left-color: var(--success); }
+    .stat-card.danger { border-left-color: var(--danger); }
+    .stat-card.warning { border-left-color: var(--warning); }
+
+    .stat-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.8;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+      transition: color 0.3s;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      margin-top: 0.5rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: all 0.3s;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      transform: scaleX(0);
+      transition: transform 0.3s;
+    }
+
+    .card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      position: relative;
+      display: inline-block;
+    }
+
+    .card-title::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 30px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      border-radius: 2px;
+    }
+
+    .attendance-summary {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .summary-item {
+      flex: 1;
+      min-width: 150px;
+      background: var(--bg);
+      padding: 1.25rem;
+      border-radius: 12px;
+      text-align: center;
+      transition: all 0.3s;
+      border: 1px solid var(--border);
+    }
+
+    .summary-item:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .summary-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .summary-label {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 0.25rem;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .menu-toggle {
+        display: block;
+      }
+
+      .content-area {
+        padding: 1rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .filters {
+        flex-direction: column;
+      }
+
+      .filters .form-group {
+        min-width: 100%;
+      }
+
+      .user-info {
+        display: none;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .user-info {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">A</div>
+        <div>
+          <div class="sidebar-title">AMS</div>
+          <div class="sidebar-subtitle">Student Portal</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="active">
+          <span class="nav-icon">📊</span>
+          <span>My Attendance</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Top Bar -->
+      <div class="top-bar">
+        <div class="top-bar-left">
+          <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+          <h1 class="page-title">Student Dashboard</h1>
+        </div>
+        <div class="user-menu">
+          <div class="user-info">
+            <div class="user-name" id="studentName">Student</div>
+            <div class="user-role">Student</div>
+          </div>
+          <div class="user-avatar" onclick="logout()" title="Click to logout">S</div>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="content-area">
+        <div class="welcome-banner">
+          <h2>Welcome back! 👋</h2>
+          <p>Track your attendance and stay updated with your classes.</p>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">📚</div>
+            <div class="stat-value" id="totalClasses">0</div>
+            <div class="stat-label">Total Classes</div>
+          </div>
+          <div class="stat-card success">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="presentDays">0</div>
+            <div class="stat-label">Days Present</div>
+          </div>
+          <div class="stat-card danger">
+            <div class="stat-icon">❌</div>
+            <div class="stat-value" id="absentDays">0</div>
+            <div class="stat-label">Days Absent</div>
+          </div>
+          <div class="stat-card warning">
+            <div class="stat-icon">⏰</div>
+            <div class="stat-value" id="lateDays">0</div>
+            <div class="stat-label">Days Late</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div class="stat-value" id="attendancePercentage">0%</div>
+            <div class="stat-label">Attendance %</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">My Attendance Records</div>
+          </div>
+          <div class="filters">
+            <div class="form-group">
+              <label>Filter by Class</label>
+              <select class="form-control" id="classFilter" onchange="loadMyRecords()">
+                <option value="">All Classes</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>From Date</label>
+              <input type="date" class="form-control" id="fromDate" onchange="loadMyRecords()">
+            </div>
+            <div class="form-group">
+              <label>To Date</label>
+              <input type="date" class="form-control" id="toDate" onchange="loadMyRecords()">
+            </div>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Class</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="myRecordsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    let currentStudentId = null;
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const session = requireAuth();
+      if (!session) return;
+      if (session.role !== 'student') {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      document.getElementById('studentName').textContent = session.name;
+      currentStudentId = session.studentId;
+
+      const avatar = document.querySelector('.user-avatar');
+      if (avatar) avatar.textContent = session.name.charAt(0).toUpperCase();
+
+      populateClassFilter();
+      loadMyRecords();
+      loadMyStats();
+    });
+
+    function populateClassFilter() {
+      const classes = Storage.getClasses();
+      const select = document.getElementById('classFilter');
+      select.innerHTML = '<option value="">All Classes</option>';
+      classes.forEach(cls => {
+        const opt = document.createElement('option');
+        opt.value = cls.id;
+        opt.textContent = `${cls.name} - ${cls.section}`;
+        select.appendChild(opt);
+      });
+    }
+
+    function loadMyStats() {
+      const records = Storage.getAttendance().filter(r => r.studentId === currentStudentId);
+      const present = records.filter(r => r.status === 'present').length;
+      const absent = records.filter(r => r.status === 'absent').length;
+      const late = records.filter(r => r.status === 'late').length;
+      const total = records.length;
+      const percentage = total > 0 ? Math.round(((present + late * 0.5) / total) * 100) : 0;
+
+      document.getElementById('totalClasses').textContent = total;
+      document.getElementById('presentDays').textContent = present;
+      document.getElementById('absentDays').textContent = absent;
+      document.getElementById('lateDays').textContent = late;
+      document.getElementById('attendancePercentage').textContent = percentage + '%';
+    }
+
+    function loadMyRecords() {
+      const classId = document.getElementById('classFilter').value;
+      const fromDate = document.getElementById('fromDate').value;
+      const toDate = document.getElementById('toDate').value;
+
+      let records = Storage.getAttendance().filter(r => r.studentId === currentStudentId);
+
+      if (classId) records = records.filter(r => r.classId == classId);
+      if (fromDate) records = records.filter(r => r.date >= fromDate);
+      if (toDate) records = records.filter(r => r.date <= toDate);
+
+      records.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      const tbody = document.getElementById('myRecordsTable');
+      tbody.innerHTML = '';
+
+      if (records.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center" style="color: var(--text-light);">No records found.</td></tr>';
+        return;
+      }
+
+      records.forEach(record => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${formatDate(record.date)}</td>
+          <td>${getClassName(record.classId)}</td>
+          <td><span class="badge badge-${record.status === 'present' ? 'success' : record.status === 'absent' ? 'danger' : 'warning'}">${record.status}</span></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+  </script>
+</body>
+</html>

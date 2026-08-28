@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Dashboard - Attendance System</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .dashboard-wrapper {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, var(--card) 0%, #f8fafc 100%);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      z-index: 50;
+      transition: transform 0.3s;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.25rem;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .sidebar-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .sidebar-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .sidebar-nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      color: var(--text-light);
+      text-decoration: none;
+      font-weight: 500;
+      border-radius: 10px;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sidebar-nav a::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--primary);
+      transform: scaleY(0);
+      transition: transform 0.2s;
+    }
+
+    .sidebar-nav a:hover {
+      background: rgba(99, 102, 241, 0.05);
+      color: var(--primary);
+    }
+
+    .sidebar-nav a:hover::before {
+      transform: scaleY(1);
+    }
+
+    .sidebar-nav a.active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(129, 140, 248, 0.1) 100%);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .sidebar-nav a.active::before {
+      transform: scaleY(1);
+    }
+
+    .sidebar-nav a .nav-icon {
+      font-size: 1.25rem;
+      width: 24px;
+      text-align: center;
+    }
+
+    .main-content {
+      margin-left: 260px;
+      flex: 1;
+      min-height: 100vh;
+    }
+
+    .top-bar {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .top-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .menu-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text);
+      padding: 0.5rem;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .menu-toggle:hover {
+      background: var(--bg);
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .user-avatar:hover {
+      transform: scale(1.1);
+    }
+
+    .user-info {
+      display: none;
+    }
+
+    .user-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+
+    .user-role {
+      font-size: 0.8rem;
+      color: var(--text-light);
+    }
+
+    .content-area {
+      padding: 2rem;
+    }
+
+    .welcome-banner {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: 16px;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .welcome-banner::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+      border-radius: 50%;
+    }
+
+    .welcome-banner h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      position: relative;
+    }
+
+    .welcome-banner p {
+      opacity: 0.9;
+      position: relative;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .quick-action-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 10px;
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .quick-action-btn:hover {
+      background: rgba(255,255,255,0.3);
+      transform: translateY(-2px);
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, var(--card) 0%, #f8fafc 100%);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      border-left: 5px solid var(--primary);
+      transition: all 0.3s;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
+      border-radius: 50%;
+      transition: all 0.3s;
+    }
+
+    .stat-card:hover::before {
+      transform: scale(1.5);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    }
+
+    .stat-card.success { border-left-color: var(--success); }
+    .stat-card.danger { border-left-color: var(--danger); }
+    .stat-card.warning { border-left-color: var(--warning); }
+
+    .stat-icon {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.8;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+      transition: color 0.3s;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      margin-top: 0.5rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: all 0.3s;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      transform: scaleX(0);
+      transition: transform 0.3s;
+    }
+
+    .card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+      position: relative;
+      display: inline-block;
+    }
+
+    .card-title::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 30px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      border-radius: 2px;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .menu-toggle {
+        display: block;
+      }
+
+      .content-area {
+        padding: 1rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .filters {
+        flex-direction: column;
+      }
+
+      .filters .form-group {
+        min-width: 100%;
+      }
+
+      .user-info {
+        display: none;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .user-info {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">A</div>
+        <div>
+          <div class="sidebar-title">AMS</div>
+          <div class="sidebar-subtitle">Attendance System</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="active" onclick="switchTab('take-attendance')">
+          <span class="nav-icon">📋</span>
+          <span>Take Attendance</span>
+        </a>
+        <a href="#" onclick="switchTab('manage-students')">
+          <span class="nav-icon">👨‍🎓</span>
+          <span>Manage Students</span>
+        </a>
+        <a href="#" onclick="switchTab('records')">
+          <span class="nav-icon">📊</span>
+          <span>Records</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Top Bar -->
+      <div class="top-bar">
+        <div class="top-bar-left">
+          <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+          <h1 class="page-title">Teacher Dashboard</h1>
+        </div>
+        <div class="user-menu">
+          <div class="user-info">
+            <div class="user-name" id="teacherName">Teacher</div>
+            <div class="user-role">Administrator</div>
+          </div>
+          <div class="user-avatar" onclick="logout()" title="Click to logout">T</div>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="content-area">
+        <div class="welcome-banner">
+          <h2>Welcome back! 👋</h2>
+          <p>Manage attendance, view reports, and keep track of student performance.</p>
+          <div class="quick-actions">
+            <button class="quick-action-btn" onclick="switchTab('take-attendance')">📋 Take Attendance</button>
+            <button class="quick-action-btn" onclick="switchTab('records')">📊 View Records</button>
+          </div>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <!-- Take Attendance Tab -->
+        <div id="tab-take-attendance" class="tab-content">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon">👥</div>
+              <div class="stat-value" id="totalStudents">0</div>
+              <div class="stat-label">Total Students</div>
+            </div>
+            <div class="stat-card success">
+              <div class="stat-icon">✅</div>
+              <div class="stat-value" id="presentCount">0</div>
+              <div class="stat-label">Present Today</div>
+            </div>
+            <div class="stat-card danger">
+              <div class="stat-icon">❌</div>
+              <div class="stat-value" id="absentCount">0</div>
+              <div class="stat-label">Absent Today</div>
+            </div>
+            <div class="stat-card warning">
+              <div class="stat-icon">⏰</div>
+              <div class="stat-value" id="lateCount">0</div>
+              <div class="stat-label">Late Today</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Mark Attendance</div>
+            </div>
+            <div class="filters">
+              <div class="form-group">
+                <label>Select Class</label>
+                <select class="form-control" id="classFilter" onchange="handleClassSelect(this, 'classFilter')">
+                  <option value="">All Classes</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Select Date</label>
+                <input type="date" class="form-control" id="dateFilter" onchange="loadAttendance()">
+              </div>
+              <div class="form-group">
+                <label>&nbsp;</label>
+                <button class="btn btn-primary" onclick="markAllPresent()">✓ Mark All Present</button>
+              </div>
+            </div>
+
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Roll No</th>
+                    <th>Student Name</th>
+                    <th>Class</th>
+                    <th style="text-align: center;">Attendance</th>
+                  </tr>
+                </thead>
+                <tbody id="attendanceTable"></tbody>
+              </table>
+            </div>
+
+            <div class="modal-footer" style="border: none; padding: 1rem 0 0;">
+              <button class="btn btn-success" onclick="saveAttendance()">💾 Save Attendance</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subjects Tab -->
+        <div id="tab-subjects" class="tab-content" style="display: none;">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">➕ Add New Subject</div>
+            </div>
+            <form onsubmit="addSubject(event)">
+              <div class="filters" style="margin-bottom: 0;">
+                <div class="form-group">
+                  <label>Subject Name</label>
+                  <input type="text" class="form-control" id="subjectName" required placeholder="e.g. Data Structures">
+                </div>
+                <div class="form-group">
+                  <label>Subject Code</label>
+                  <input type="text" class="form-control" id="subjectCode" required placeholder="e.g. CS101">
+                </div>
+                <div class="form-group" style="flex: 1.5;">
+                  <label>Class</label>
+                  <select class="form-control" id="subjectClass" required onchange="handleClassSelect(this, 'subjectClass')">
+                    <option value="">Select Class</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>&nbsp;</label>
+                  <button type="submit" class="btn btn-primary">+ Add Subject</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📚 My Subjects</div>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Subject Name</th>
+                    <th>Code</th>
+                    <th>Class</th>
+                    <th>Students</th>
+                    <th style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="subjectsTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manage Students Tab -->
+        <div id="tab-manage-students" class="tab-content" style="display: none;">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Add New Student</div>
+            </div>
+            <form onsubmit="addStudent(event)">
+              <div class="filters" style="margin-bottom: 0;">
+                <div class="form-group">
+                  <label>Roll Number</label>
+                  <input type="text" class="form-control" id="studentRollNo" required placeholder="e.g. CS001">
+                </div>
+                <div class="form-group">
+                  <label>Student Name</label>
+                  <input type="text" class="form-control" id="studentName" required placeholder="Full name">
+                </div>
+                <div class="form-group">
+                  <label>Class</label>
+              <select class="form-control" id="studentClass" required onchange="handleClassSelect(this, 'studentClass')">
+                <option value="">Select Class</option>
+              </select>
+                </div>
+                <div class="form-group">
+                  <label>&nbsp;</label>
+                  <button type="submit" class="btn btn-primary">+ Add Student</button>
+                </div>
+              </div>
+            </form>
+      </div>
+
+      <!-- Students List -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">👨‍🎓 All Students</div>
+          <input type="text" class="form-control" id="studentSearch" placeholder="🔍 Search students..." oninput="loadStudents()" style="max-width: 250px;">
+        </div>
+            </div>
+            <div class="filters">
+              <div class="form-group">
+                <label>Filter by Class</label>
+              <select class="form-control" id="filterClass" onchange="handleClassSelect(this, 'filterClass')">
+                <option value="">All Classes</option>
+              </select>
+              </div>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Roll No</th>
+                    <th>Name</th>
+                    <th>Class</th>
+                    <th>Attendance %</th>
+                    <th style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="studentsTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Records Tab -->
+        <div id="tab-records" class="tab-content" style="display: none;">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Attendance Records</div>
+              <button class="btn btn-secondary btn-sm" onclick="exportRecords()">📥 Export CSV</button>
+            </div>
+            <div class="filters">
+              <div class="form-group">
+                <label>Filter by Class</label>
+              <select class="form-control" id="recordClassFilter" onchange="handleClassSelect(this, 'recordClassFilter')">
+                <option value="">All Classes</option>
+              </select>
+              </div>
+              <div class="form-group">
+                <label>From Date</label>
+                <input type="date" class="form-control" id="recordFromDate" onchange="loadRecords()">
+              </div>
+              <div class="form-group">
+                <label>To Date</label>
+                <input type="date" class="form-control" id="recordToDate" onchange="loadRecords()">
+              </div>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Student Name</th>
+                    <th>Class</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="recordsTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Class Management Modal -->
+  <div class="modal-overlay" id="classManagerModal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-title">🏫 Manage Classes</div>
+        <button class="modal-close" onclick="closeModal('classManagerModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="addClassFromModal(event)" style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg); border-radius: 12px;">
+          <div style="display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 150px;">
+              <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block;">Class Name</label>
+              <input type="text" class="form-control" id="className" required placeholder="e.g. Computer Science">
+            </div>
+            <div style="width: 80px;">
+              <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block;">Section</label>
+              <input type="text" class="form-control" id="classSection" required placeholder="A">
+            </div>
+            <div style="width: 100px;">
+              <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block;">Year</label>
+              <input type="text" class="form-control" id="classYear" required placeholder="2024-25">
+            </div>
+            <button type="submit" class="btn btn-primary" style="height: 42px;">+ Add</button>
+          </div>
+        </form>
+
+        <div class="table-container" style="border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
+          <table>
+            <thead>
+              <tr>
+                <th>Class Name</th>
+                <th>Section</th>
+                <th>Year</th>
+                <th>Students</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="classesTable">
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('classManagerModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Student Modal -->
+  <div class="modal-overlay" id="editStudentModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">✏️ Edit Student</div>
+        <button class="modal-close" onclick="closeModal('editStudentModal')">&times;</button>
+      </div>
+      <form onsubmit="updateStudent(event)">
+        <div class="modal-body">
+          <input type="hidden" id="editStudentId">
+          <div class="form-group">
+            <label>Roll Number</label>
+            <input type="text" class="form-control" id="editRollNo" required>
+          </div>
+          <div class="form-group">
+            <label>Student Name</label>
+            <input type="text" class="form-control" id="editStudentName" required>
+          </div>
+          <div class="form-group">
+            <label>Class</label>
+            <select class="form-control" id="editStudentClass" required onchange="handleClassSelect(this, 'editStudentClass')">
+              <option value="">Select Class</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('editStudentModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    let currentAttendance = {};
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const session = requireAuth();
+      if (session && session.role !== 'teacher') {
+        window.location.href = 'login.html';
+        return;
+      }
+      if (session) {
+        document.getElementById('teacherName').textContent = session.name;
+        const avatar = document.querySelector('.user-avatar');
+        if (avatar) avatar.textContent = session.name.charAt(0).toUpperCase();
+      }
+      initDashboard();
+      document.getElementById('dateFilter').valueAsDate = new Date();
+      populateAllClassDropdowns();
+      loadAttendance();
+      loadRecords();
+    });
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+      document.getElementById('tab-' + tabId).style.display = 'block';
+      document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+      event.target.closest('a')?.classList.add('active');
+
+      if (tabId === 'subjects') {
+        loadSubjects();
+      } else if (tabId === 'manage-students') {
+        loadClasses();
+        loadStudents();
+      } else if (tabId === 'records') {
+        loadRecords();
+      }
+
+      if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.remove('open');
+      }
+    }
+
+    function populateAllClassDropdowns() {
+      const session = requireAuth();
+      if (!session) return;
+      const classes = Storage.getClasses();
+      const dropdowns = ['classFilter', 'recordClassFilter', 'studentClass', 'editStudentClass', 'filterClass', 'subjectClass'];
+
+      dropdowns.forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.innerHTML = '<option value="">Select Class</option>';
+        classes.forEach(cls => {
+          const opt = document.createElement('option');
+          opt.value = cls.id;
+          opt.textContent = `${cls.name} - ${cls.section}`;
+          select.appendChild(opt);
+        });
+        const manageOpt = document.createElement('option');
+        manageOpt.value = '__manage__';
+        manageOpt.textContent = '⚙️ Manage Classes...';
+        select.appendChild(manageOpt);
+      });
+    }
+
+    function handleClassSelect(selectElement, source) {
+      if (selectElement.value === '__manage__') {
+        openClassManager();
+        selectElement.value = '';
+      }
+    }
+
+    function openClassManager() {
+      loadClassesInModal();
+      openModal('classManagerModal');
+    }
+
+    function loadClassesInModal() {
+      const classes = Storage.getClasses();
+      const tbody = document.getElementById('classesTable');
+      tbody.innerHTML = '';
+
+      if (classes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="color: var(--text-light);">No classes found. Add a class above.</td></tr>';
+        return;
+      }
+
+      classes.forEach(cls => {
+        const studentCount = Storage.getStudents().filter(s => s.classId == cls.id).length;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${cls.name}</strong></td>
+          <td>${cls.section}</td>
+          <td>${cls.year}</td>
+          <td><span class="badge badge-success">${studentCount}</span></td>
+          <td style="text-align: right;">
+            <button class="btn btn-danger btn-sm" onclick="deleteClass(${cls.id})">🗑 Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function addClassFromModal(e) {
+      e.preventDefault();
+      const classes = Storage.getClasses();
+
+      const name = document.getElementById('className').value.trim();
+      const section = document.getElementById('classSection').value.trim();
+      const year = document.getElementById('classYear').value.trim();
+
+      classes.push({
+        id: Date.now(),
+        name,
+        section,
+        year
+      });
+
+      Storage.setClasses(classes);
+      showAlert('Class added successfully!', 'success');
+
+      document.getElementById('className').value = '';
+      document.getElementById('classSection').value = '';
+      document.getElementById('classYear').value = '';
+
+      loadClassesInModal();
+      populateAllClassDropdowns();
+    }
+
+    function loadAttendance() {
+      const classId = document.getElementById('classFilter').value;
+      const date = document.getElementById('dateFilter').value;
+      const students = Storage.getStudents().filter(s => !classId || s.classId == classId);
+
+      const tbody = document.getElementById('attendanceTable');
+      tbody.innerHTML = '';
+
+      currentAttendance = {};
+
+      if (students.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="color: var(--text-light);">No students found. Add students from Manage Students tab.</td></tr>';
+        updateStats([]);
+        return;
+      }
+
+      const existingRecords = Storage.getAttendance().filter(r => r.date === date);
+
+      students.forEach(student => {
+        const existing = existingRecords.find(r => r.studentId === student.id);
+        currentAttendance[student.id] = existing ? existing.status : 'present';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${student.rollNo}</strong></td>
+          <td>${student.name}</td>
+          <td><span class="badge badge-success">${getClassName(student.classId)}</span></td>
+          <td style="text-align: center;">
+            <div class="attendance-actions">
+              <button class="attendance-btn present ${currentAttendance[student.id] === 'present' ? 'selected' : ''}" onclick="setAttendance('${student.id}', 'present')">✓ Present</button>
+              <button class="attendance-btn absent ${currentAttendance[student.id] === 'absent' ? 'selected' : ''}" onclick="setAttendance('${student.id}', 'absent')">✗ Absent</button>
+              <button class="attendance-btn late ${currentAttendance[student.id] === 'late' ? 'selected' : ''}" onclick="setAttendance('${student.id}', 'late')">⏰ Late</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      updateStats(students);
+    }
+
+    function setAttendance(studentId, status) {
+      currentAttendance[studentId] = status;
+      document.querySelectorAll('.attendance-btn').forEach(btn => btn.classList.remove('selected'));
+      event.target.classList.add('selected');
+    }
+
+    function updateStats(students) {
+      const date = document.getElementById('dateFilter').value;
+      const classId = document.getElementById('classFilter').value;
+
+      if (!date) {
+        document.getElementById('totalStudents').textContent = students.length;
+        document.getElementById('presentCount').textContent = '0';
+        document.getElementById('absentCount').textContent = '0';
+        document.getElementById('lateCount').textContent = '0';
+        return;
+      }
+
+      const stats = getClassStats(classId, date);
+      document.getElementById('totalStudents').textContent = stats.total;
+      document.getElementById('presentCount').textContent = stats.present;
+      document.getElementById('absentCount').textContent = stats.absent;
+      document.getElementById('lateCount').textContent = stats.late;
+    }
+
+    function markAllPresent() {
+      Object.keys(currentAttendance).forEach(id => {
+        currentAttendance[id] = 'present';
+      });
+      loadAttendance();
+      showAlert('All students marked as present', 'success');
+    }
+
+    function saveAttendance() {
+      const date = document.getElementById('dateFilter').value;
+      const classId = document.getElementById('classFilter').value;
+
+      if (!date) {
+        showAlert('Please select a date', 'danger');
+        return;
+      }
+
+      let records = Storage.getAttendance();
+      records = records.filter(r => classId ? !(r.date === date && r.classId == classId) : r.date !== date);
+
+      Object.entries(currentAttendance).forEach(([studentId, status]) => {
+        records.push({
+          id: generateId(),
+          studentId,
+          classId: classId || Storage.getStudents().find(s => s.id === studentId)?.classId,
+          date,
+          status,
+          timestamp: new Date().toISOString()
+        });
+      });
+
+      Storage.setAttendance(records);
+      showAlert('Attendance saved successfully!', 'success');
+      loadAttendance();
+      loadRecords();
+    }
+
+    function loadRecords() {
+      const classId = document.getElementById('recordClassFilter').value;
+      const fromDate = document.getElementById('recordFromDate').value;
+      const toDate = document.getElementById('recordToDate').value;
+
+      let records = Storage.getAttendance();
+
+      if (classId) records = records.filter(r => r.classId == classId);
+      if (fromDate) records = records.filter(r => r.date >= fromDate);
+      if (toDate) records = records.filter(r => r.date <= toDate);
+
+      records.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      const tbody = document.getElementById('recordsTable');
+      tbody.innerHTML = '';
+
+      if (records.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="color: var(--text-light);">No records found.</td></tr>';
+        return;
+      }
+
+      records.forEach(record => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${formatDate(record.date)}</td>
+          <td>${getStudentName(record.studentId)}</td>
+          <td>${getClassName(record.classId)}</td>
+          <td><span class="badge badge-${record.status === 'present' ? 'success' : record.status === 'absent' ? 'danger' : 'warning'}">${record.status}</span></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function exportRecords() {
+      const classId = document.getElementById('recordClassFilter').value;
+      const fromDate = document.getElementById('recordFromDate').value;
+      const toDate = document.getElementById('recordToDate').value;
+
+      let records = Storage.getAttendance();
+
+      if (classId) records = records.filter(r => r.classId == classId);
+      if (fromDate) records = records.filter(r => r.date >= fromDate);
+      if (toDate) records = records.filter(r => r.date <= toDate);
+
+      if (records.length === 0) {
+        showAlert('No records to export', 'danger');
+        return;
+      }
+
+      const data = records.map(r => ({
+        Date: formatDate(r.date),
+        'Student Name': getStudentName(r.studentId),
+        Class: getClassName(r.classId),
+        Status: r.status.toUpperCase()
+      }));
+
+      exportToCSV(data, `attendance_${new Date().toISOString().split('T')[0]}.csv`);
+      showAlert('Records exported successfully!', 'success');
+    }
+
+    function addStudent(e) {
+      e.preventDefault();
+      const students = Storage.getStudents();
+
+      const rollNo = document.getElementById('studentRollNo').value.trim();
+      const name = document.getElementById('studentName').value.trim();
+      const classId = document.getElementById('studentClass').value;
+
+      if (students.some(s => s.rollNo.toLowerCase() === rollNo.toLowerCase())) {
+        showAlert('Student with this roll number already exists!', 'danger');
+        return;
+      }
+
+      students.push({
+        id: generateId(),
+        rollNo,
+        name,
+        classId,
+        createdAt: new Date().toISOString()
+      });
+
+      Storage.setStudents(students);
+      showAlert('Student added successfully!', 'success');
+      e.target.reset();
+      loadStudents();
+    }
+
+    function loadClasses() {
+      loadClassesInModal();
+    }
+
+    function deleteClass(classId) {
+      if (!confirm('Delete this class? All students in this class will also be deleted.')) return;
+
+      const students = Storage.getStudents().filter(s => s.classId != classId);
+      Storage.setStudents(students);
+
+      const classes = Storage.getClasses().filter(c => c.id !== classId);
+      Storage.setClasses(classes);
+
+      showAlert('Class deleted successfully!', 'success');
+      loadClassesInModal();
+      populateAllClassDropdowns();
+      loadStudents();
+    }
+
+    function loadStudents() {
+      const search = document.getElementById('studentSearch')?.value.toLowerCase() || '';
+      const classId = document.getElementById('filterClass')?.value || '';
+
+      let students = Storage.getStudents();
+
+      if (search) {
+        students = students.filter(s => s.name.toLowerCase().includes(search) || s.rollNo.toLowerCase().includes(search));
+      }
+      if (classId) {
+        students = students.filter(s => s.classId == classId);
+      }
+
+      const tbody = document.getElementById('studentsTable');
+      tbody.innerHTML = '';
+
+      if (students.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="color: var(--text-light);">No students found.</td></tr>';
+        return;
+      }
+
+      students.forEach(student => {
+        const stats = calculateAttendanceStats(student.id, student.classId);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${student.rollNo}</strong></td>
+          <td>${student.name}</td>
+          <td>${getClassName(student.classId)}</td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span style="font-weight: 700; min-width: 45px; font-size: 1rem;">${stats.percentage}%</span>
+              <div class="progress-bar" style="flex: 1; max-width: 120px;">
+                <div class="progress-fill ${stats.percentage >= 75 ? 'success' : stats.percentage >= 60 ? 'warning' : 'danger'}" style="width: ${stats.percentage}%"></div>
+              </div>
+            </div>
+          </td>
+          <td style="text-align: right;">
+            <button class="btn btn-secondary btn-sm" onclick="editStudent('${student.id}')">✏️ Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteStudent('${student.id}')">🗑 Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function editStudent(studentId) {
+      const student = Storage.getStudents().find(s => s.id === studentId);
+      if (!student) return;
+
+      document.getElementById('editStudentId').value = student.id;
+      document.getElementById('editRollNo').value = student.rollNo;
+      document.getElementById('editStudentName').value = student.name;
+      document.getElementById('editStudentClass').value = student.classId;
+
+      openModal('editStudentModal');
+    }
+
+    function updateStudent(e) {
+      e.preventDefault();
+      const students = Storage.getStudents();
+      const id = document.getElementById('editStudentId').value;
+      const rollNo = document.getElementById('editRollNo').value.trim();
+      const name = document.getElementById('editStudentName').value.trim();
+      const classId = document.getElementById('editStudentClass').value;
+
+      const student = students.find(s => s.id === id);
+      if (!student) return;
+
+      if (students.some(s => s.id !== id && s.rollNo.toLowerCase() === rollNo.toLowerCase())) {
+        showAlert('Another student with this roll number exists!', 'danger');
+        return;
+      }
+
+      student.rollNo = rollNo;
+      student.name = name;
+      student.classId = classId;
+
+      Storage.setStudents(students);
+      showAlert('Student updated successfully!', 'success');
+      closeModal('editStudentModal');
+      loadStudents();
+    }
+
+    function deleteStudent(studentId) {
+      if (!confirm('Delete this student? All attendance records will also be deleted.')) return;
+
+      const records = Storage.getAttendance().filter(r => r.studentId !== studentId);
+      Storage.setAttendance(records);
+
+      const students = Storage.getStudents().filter(s => s.id !== studentId);
+      Storage.setStudents(students);
+
+      showAlert('Student deleted successfully!', 'success');
+      loadStudents();
+    }
+  </script>
+</body>
+</html>

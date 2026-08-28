@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Students - Attendance System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>📚 Student Attendance Management System</h1>
+    <p>Admin Panel - Manage Students and Classes</p>
+  </div>
+
+  <nav class="nav">
+    <a href="index.html">Dashboard</a>
+    <a href="admin.html" class="active">Manage Students</a>
+  </nav>
+
+  <div class="container">
+    <div id="alert" class="alert"></div>
+
+    <!-- Add Student -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">➕ Add New Student</div>
+      </div>
+      <form onsubmit="addStudent(event)">
+        <div class="filters" style="margin-bottom: 0;">
+          <div class="form-group">
+            <label>Roll Number</label>
+            <input type="text" class="form-control" id="studentRollNo" required placeholder="e.g. CS001">
+          </div>
+          <div class="form-group">
+            <label>Student Name</label>
+            <input type="text" class="form-control" id="studentName" required placeholder="Full name">
+          </div>
+          <div class="form-group" style="flex: 1.5;">
+            <label>Class</label>
+            <select class="form-control" id="studentClass" required onchange="handleClassSelect(this, 'studentClass')">
+              <option value="">Select Class</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn btn-primary">+ Add Student</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Students List -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">👨‍🎓 All Students</div>
+        <input type="text" class="form-control" id="studentSearch" placeholder="🔍 Search students..." 
+               oninput="loadStudents()" style="max-width: 250px;">
+      </div>
+      <div class="filters">
+        <div class="form-group" style="flex: 1.5;">
+          <label>Filter by Class</label>
+          <select class="form-control" id="filterClass" onchange="handleClassSelect(this, 'filterClass')">
+            <option value="">All Classes</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Roll No</th>
+              <th>Name</th>
+              <th>Class</th>
+              <th>Attendance %</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="studentsTable">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Class Management Modal -->
+  <div class="modal-overlay" id="classManagerModal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-title">🏫 Manage Classes</div>
+        <button class="modal-close" onclick="closeModal('classManagerModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="addClassFromModal(event)" style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg); border-radius: 12px;">
+          <div style="display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 150px;">
+              <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block;">Class Name</label>
+              <input type="text" class="form-control" id="className" required placeholder="e.g. Computer Science">
+            </div>
+            <div style="width: 80px;">
+              <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block;">Section</label>
+              <input type="text" class="form-control" id="classSection" required placeholder="A">
+            </div>
+            <div style="width: 100px;">
+              <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block;">Year</label>
+              <input type="text" class="form-control" id="classYear" required placeholder="2024-25">
+            </div>
+            <button type="submit" class="btn btn-primary" style="height: 42px;">+ Add</button>
+          </div>
+        </form>
+
+        <div class="table-container" style="border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
+          <table>
+            <thead>
+              <tr>
+                <th>Class Name</th>
+                <th>Section</th>
+                <th>Year</th>
+                <th>Students</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="classesTable">
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('classManagerModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Student Modal -->
+  <div class="modal-overlay" id="editStudentModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">✏️ Edit Student</div>
+        <button class="modal-close" onclick="closeModal('editStudentModal')">&times;</button>
+      </div>
+      <form onsubmit="updateStudent(event)">
+        <div class="modal-body">
+          <input type="hidden" id="editStudentId">
+          <div class="form-group">
+            <label>Roll Number</label>
+            <input type="text" class="form-control" id="editRollNo" required>
+          </div>
+          <div class="form-group">
+            <label>Student Name</label>
+            <input type="text" class="form-control" id="editStudentName" required>
+          </div>
+          <div class="form-group">
+            <label>Class</label>
+            <select class="form-control" id="editStudentClass" required onchange="handleClassSelect(this, 'editStudentClass')">
+              <option value="">Select Class</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('editStudentModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    let currentModalSource = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initDashboard();
+      populateAllClassDropdowns();
+      loadStudents();
+    });
+
+    function populateAllClassDropdowns() {
+      const classes = Storage.getClasses();
+      const dropdowns = ['studentClass', 'editStudentClass', 'filterClass'];
+
+      dropdowns.forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.innerHTML = '<option value="">Select Class</option>';
+        classes.forEach(cls => {
+          const opt = document.createElement('option');
+          opt.value = cls.id;
+          opt.textContent = `${cls.name} - ${cls.section}`;
+          select.appendChild(opt);
+        });
+        const manageOpt = document.createElement('option');
+        manageOpt.value = '__manage__';
+        manageOpt.textContent = '⚙️ Manage Classes...';
+        select.appendChild(manageOpt);
+      });
+    }
+
+    function handleClassSelect(selectElement, source) {
+      if (selectElement.value === '__manage__') {
+        currentModalSource = source;
+        openClassManager();
+        selectElement.value = '';
+      }
+    }
+
+    function openClassManager() {
+      loadClassesInModal();
+      openModal('classManagerModal');
+    }
+
+    function loadClassesInModal() {
+      const classes = Storage.getClasses();
+      const tbody = document.getElementById('classesTable');
+      tbody.innerHTML = '';
+
+      if (classes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="color: var(--text-light);">No classes found. Add a class above.</td></tr>';
+        return;
+      }
+
+      classes.forEach(cls => {
+        const studentCount = Storage.getStudents().filter(s => s.classId == cls.id).length;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${cls.name}</strong></td>
+          <td>${cls.section}</td>
+          <td>${cls.year}</td>
+          <td><span class="badge badge-success">${studentCount}</span></td>
+          <td style="text-align: right;">
+            <button class="btn btn-danger btn-sm" onclick="deleteClass(${cls.id})">🗑 Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function addClassFromModal(e) {
+      e.preventDefault();
+      const classes = Storage.getClasses();
+
+      const name = document.getElementById('className').value.trim();
+      const section = document.getElementById('classSection').value.trim();
+      const year = document.getElementById('classYear').value.trim();
+
+      classes.push({
+        id: Date.now(),
+        name,
+        section,
+        year
+      });
+
+      Storage.setClasses(classes);
+      showAlert('Class added successfully!', 'success');
+
+      document.getElementById('className').value = '';
+      document.getElementById('classSection').value = '';
+      document.getElementById('classYear').value = '';
+
+      loadClassesInModal();
+      populateAllClassDropdowns();
+    }
+
+    function addStudent(e) {
+      e.preventDefault();
+      const students = Storage.getStudents();
+
+      const rollNo = document.getElementById('studentRollNo').value.trim();
+      const name = document.getElementById('studentName').value.trim();
+      const classId = document.getElementById('studentClass').value;
+
+      if (students.some(s => s.rollNo.toLowerCase() === rollNo.toLowerCase())) {
+        showAlert('Student with this roll number already exists!', 'danger');
+        return;
+      }
+
+      students.push({
+        id: generateId(),
+        rollNo,
+        name,
+        classId,
+        createdAt: new Date().toISOString()
+      });
+
+      Storage.setStudents(students);
+      showAlert('Student added successfully!', 'success');
+
+      e.target.reset();
+      loadStudents();
+    }
+
+    function loadStudents() {
+      const search = document.getElementById('studentSearch')?.value.toLowerCase() || '';
+      const classId = document.getElementById('filterClass')?.value || '';
+
+      let students = Storage.getStudents();
+
+      if (search) {
+        students = students.filter(s => 
+          s.name.toLowerCase().includes(search) || 
+          s.rollNo.toLowerCase().includes(search)
+        );
+      }
+
+      if (classId) {
+        students = students.filter(s => s.classId == classId);
+      }
+
+      const tbody = document.getElementById('studentsTable');
+      tbody.innerHTML = '';
+
+      if (students.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="color: var(--text-light);">No students found.</td></tr>';
+        return;
+      }
+
+      students.forEach(student => {
+        const stats = calculateAttendanceStats(student.id, student.classId);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${student.rollNo}</strong></td>
+          <td>${student.name}</td>
+          <td>${getClassName(student.classId)}</td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-weight: 600; min-width: 40px;">${stats.percentage}%</span>
+              <div class="progress-bar" style="flex: 1; max-width: 100px;">
+                <div class="progress-fill ${stats.percentage >= 75 ? 'success' : stats.percentage >= 60 ? 'warning' : 'danger'}" 
+                     style="width: ${stats.percentage}%"></div>
+              </div>
+            </div>
+          </td>
+          <td style="text-align: right;">
+            <button class="btn btn-secondary btn-sm" onclick="editStudent('${student.id}')">✏️ Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteStudent('${student.id}')">🗑 Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function editStudent(studentId) {
+      const student = Storage.getStudents().find(s => s.id === studentId);
+      if (!student) return;
+
+      document.getElementById('editStudentId').value = student.id;
+      document.getElementById('editRollNo').value = student.rollNo;
+      document.getElementById('editStudentName').value = student.name;
+      document.getElementById('editStudentClass').value = student.classId;
+
+      openModal('editStudentModal');
+    }
+
+    function updateStudent(e) {
+      e.preventDefault();
+      const students = Storage.getStudents();
+      const id = document.getElementById('editStudentId').value;
+      const rollNo = document.getElementById('editRollNo').value.trim();
+      const name = document.getElementById('editStudentName').value.trim();
+      const classId = document.getElementById('editStudentClass').value;
+
+      const student = students.find(s => s.id === id);
+      if (!student) return;
+
+      if (students.some(s => s.id !== id && s.rollNo.toLowerCase() === rollNo.toLowerCase())) {
+        showAlert('Another student with this roll number exists!', 'danger');
+        return;
+      }
+
+      student.rollNo = rollNo;
+      student.name = name;
+      student.classId = classId;
+
+      Storage.setStudents(students);
+      showAlert('Student updated successfully!', 'success');
+      closeModal('editStudentModal');
+      loadStudents();
+    }
+
+    function deleteStudent(studentId) {
+      if (!confirm('Delete this student? All attendance records will also be deleted.')) return;
+
+      const records = Storage.getAttendance().filter(r => r.studentId !== studentId);
+      Storage.setAttendance(records);
+
+      const students = Storage.getStudents().filter(s => s.id !== studentId);
+      Storage.setStudents(students);
+
+      showAlert('Student deleted successfully!', 'success');
+      loadStudents();
+    }
+
+    function deleteClass(classId) {
+      if (!confirm('Delete this class? All students in this class will also be deleted.')) return;
+
+      const students = Storage.getStudents().filter(s => s.classId != classId);
+      Storage.setStudents(students);
+
+      const classes = Storage.getClasses().filter(c => c.id !== classId);
+      Storage.setClasses(classes);
+
+      showAlert('Class deleted successfully!', 'success');
+      loadClassesInModal();
+      populateAllClassDropdowns();
+      loadStudents();
+    }
+  </script>
+</body>
+</html>

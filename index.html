@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Management System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="header">
+    <h1>📚 Student Attendance Management System</h1>
+    <p>Mark and track student attendance efficiently</p>
+  </div>
+
+  <nav class="nav">
+    <a href="index.html" class="active">📊 Dashboard</a>
+    <a href="admin.html">👨‍🎓 Manage Students</a>
+  </nav>
+
+  <div class="container">
+    <div id="alert" class="alert"></div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value" id="totalStudents">0</div>
+        <div class="stat-label">Total Students</div>
+      </div>
+      <div class="stat-card success">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value" id="presentCount">0</div>
+        <div class="stat-label">Present Today</div>
+      </div>
+      <div class="stat-card danger">
+        <div class="stat-icon">❌</div>
+        <div class="stat-value" id="absentCount">0</div>
+        <div class="stat-label">Absent Today</div>
+      </div>
+      <div class="stat-card warning">
+        <div class="stat-icon">⏰</div>
+        <div class="stat-value" id="lateCount">0</div>
+        <div class="stat-label">Late Today</div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📋 Take Attendance</div>
+      </div>
+      <div class="filters">
+        <div class="form-group">
+          <label>Select Class</label>
+          <select class="form-control" id="classFilter" onchange="handleClassSelect(this, 'classFilter')">
+            <option value="">All Classes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Select Date</label>
+          <input type="date" class="form-control" id="dateFilter" onchange="loadAttendance()">
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" onclick="markAllPresent()">✓ Mark All Present</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Roll No</th>
+              <th>Student Name</th>
+              <th>Class</th>
+              <th style="text-align: center;">Attendance</th>
+            </tr>
+          </thead>
+          <tbody id="attendanceTable">
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-footer" style="border: none; padding: 1rem 0 0;">
+        <button class="btn btn-success" onclick="saveAttendance()">💾 Save Attendance</button>
+      </div>
+    </div>
+
+    <!-- Attendance Records -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📊 Attendance Records</div>
+        <button class="btn btn-secondary btn-sm" onclick="exportRecords()">📥 Export CSV</button>
+      </div>
+      <div class="filters">
+        <div class="form-group">
+          <label>Filter by Class</label>
+              <select class="form-control" id="recordClassFilter" onchange="handleClassSelect(this, 'recordClassFilter')">
+                <option value="">All Classes</option>
+              </select>
+        </div>
+        <div class="form-group">
+          <label>From Date</label>
+          <input type="date" class="form-control" id="recordFromDate" onchange="loadRecords()">
+        </div>
+        <div class="form-group">
+          <label>To Date</label>
+          <input type="date" class="form-control" id="recordToDate" onchange="loadRecords()">
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Student Name</th>
+              <th>Class</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="recordsTable">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    let currentAttendance = {};
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initDashboard();
+      document.getElementById('dateFilter').valueAsDate = new Date();
+      populateAllClassDropdowns();
+      loadAttendance();
+      loadRecords();
+    });
+
+    function populateAllClassDropdowns() {
+      const classes = Storage.getClasses();
+      const dropdowns = ['classFilter', 'recordClassFilter'];
+
+      dropdowns.forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.innerHTML = '<option value="">All Classes</option>';
+        classes.forEach(cls => {
+          const opt = document.createElement('option');
+          opt.value = cls.id;
+          opt.textContent = `${cls.name} - ${cls.section}`;
+          select.appendChild(opt);
+        });
+        const manageOpt = document.createElement('option');
+        manageOpt.value = '__manage__';
+        manageOpt.textContent = '⚙️ Manage Classes...';
+        select.appendChild(manageOpt);
+      });
+    }
+
+    function loadAttendance() {
+      const classId = document.getElementById('classFilter').value;
+      const date = document.getElementById('dateFilter').value;
+      const students = Storage.getStudents().filter(s => !classId || s.classId == classId);
+
+      const tbody = document.getElementById('attendanceTable');
+      tbody.innerHTML = '';
+
+      currentAttendance = {};
+
+      if (students.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="color: var(--text-light);">No students found. Add students from Admin panel.</td></tr>';
+        updateStats([]);
+        return;
+      }
+
+      const existingRecords = Storage.getAttendance().filter(r => r.date === date);
+
+      students.forEach(student => {
+        const existing = existingRecords.find(r => r.studentId === student.id);
+        currentAttendance[student.id] = existing ? existing.status : 'present';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${student.rollNo}</strong></td>
+          <td>${student.name}</td>
+          <td>${getClassName(student.classId)}</td>
+          <td style="text-align: center;">
+            <div class="attendance-actions">
+              <button class="attendance-btn present ${currentAttendance[student.id] === 'present' ? 'selected' : ''}" onclick="setAttendance('${student.id}', 'present')">✓ Present</button>
+              <button class="attendance-btn absent ${currentAttendance[student.id] === 'absent' ? 'selected' : ''}" onclick="setAttendance('${student.id}', 'absent')">✗ Absent</button>
+              <button class="attendance-btn late ${currentAttendance[student.id] === 'late' ? 'selected' : ''}" onclick="setAttendance('${student.id}', 'late')">⏰ Late</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      updateStats(students);
+    }
+
+    function setAttendance(studentId, status) {
+      currentAttendance[studentId] = status;
+      document.querySelectorAll('.attendance-btn').forEach(btn => btn.classList.remove('selected'));
+      event.target.classList.add('selected');
+    }
+
+    function updateStats(students) {
+      const date = document.getElementById('dateFilter').value;
+      const classId = document.getElementById('classFilter').value;
+
+      if (!date) {
+        document.getElementById('totalStudents').textContent = students.length;
+        document.getElementById('presentCount').textContent = '0';
+        document.getElementById('absentCount').textContent = '0';
+        document.getElementById('lateCount').textContent = '0';
+        return;
+      }
+
+      const stats = getClassStats(classId, date);
+      document.getElementById('totalStudents').textContent = stats.total;
+      document.getElementById('presentCount').textContent = stats.present;
+      document.getElementById('absentCount').textContent = stats.absent;
+      document.getElementById('lateCount').textContent = stats.late;
+    }
+
+    function markAllPresent() {
+      Object.keys(currentAttendance).forEach(id => {
+        currentAttendance[id] = 'present';
+      });
+      loadAttendance();
+      showAlert('All students marked as present', 'success');
+    }
+
+    function saveAttendance() {
+      const date = document.getElementById('dateFilter').value;
+      const classId = document.getElementById('classFilter').value;
+
+      if (!date) {
+        showAlert('Please select a date', 'danger');
+        return;
+      }
+
+      let records = Storage.getAttendance();
+      records = records.filter(r => classId ? !(r.date === date && r.classId == classId) : r.date !== date);
+
+      Object.entries(currentAttendance).forEach(([studentId, status]) => {
+        records.push({
+          id: generateId(),
+          studentId,
+          classId: classId || Storage.getStudents().find(s => s.id === studentId)?.classId,
+          date,
+          status,
+          timestamp: new Date().toISOString()
+        });
+      });
+
+      Storage.setAttendance(records);
+      showAlert('Attendance saved successfully!', 'success');
+      loadAttendance();
+      loadRecords();
+    }
+
+    function loadRecords() {
+      const classId = document.getElementById('recordClassFilter').value;
+      const fromDate = document.getElementById('recordFromDate').value;
+      const toDate = document.getElementById('recordToDate').value;
+
+      let records = Storage.getAttendance();
+
+      if (classId) records = records.filter(r => r.classId == classId);
+      if (fromDate) records = records.filter(r => r.date >= fromDate);
+      if (toDate) records = records.filter(r => r.date <= toDate);
+
+      records.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      const tbody = document.getElementById('recordsTable');
+      tbody.innerHTML = '';
+
+      if (records.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="color: var(--text-light);">No records found.</td></tr>';
+        return;
+      }
+
+      records.forEach(record => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${formatDate(record.date)}</td>
+          <td>${getStudentName(record.studentId)}</td>
+          <td>${getClassName(record.classId)}</td>
+          <td><span class="badge badge-${record.status === 'present' ? 'success' : record.status === 'absent' ? 'danger' : 'warning'}">${record.status}</span></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function exportRecords() {
+      const classId = document.getElementById('recordClassFilter').value;
+      const fromDate = document.getElementById('recordFromDate').value;
+      const toDate = document.getElementById('recordToDate').value;
+
+      let records = Storage.getAttendance();
+
+      if (classId) records = records.filter(r => r.classId == classId);
+      if (fromDate) records = records.filter(r => r.date >= fromDate);
+      if (toDate) records = records.filter(r => r.date <= toDate);
+
+      if (records.length === 0) {
+        showAlert('No records to export', 'danger');
+        return;
+      }
+
+      const data = records.map(r => ({
+        Date: formatDate(r.date),
+        'Student Name': getStudentName(r.studentId),
+        Class: getClassName(r.classId),
+        Status: r.status.toUpperCase()
+      }));
+
+      exportToCSV(data, `attendance_${new Date().toISOString().split('T')[0]}.csv`);
+      showAlert('Records exported successfully!', 'success');
+    }
+
+    function populateAllClassDropdowns() {
+      const classes = Storage.getClasses();
+      const dropdowns = ['classFilter', 'recordClassFilter'];
+
+      dropdowns.forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.innerHTML = '<option value="">All Classes</option>';
+        classes.forEach(cls => {
+          const opt = document.createElement('option');
+          opt.value = cls.id;
+          opt.textContent = `${cls.name} - ${cls.section}`;
+          select.appendChild(opt);
+        });
+        const manageOpt = document.createElement('option');
+        manageOpt.value = '__manage__';
+        manageOpt.textContent = '⚙️ Manage Classes...';
+        select.appendChild(manageOpt);
+      });
+    }
+
+    function handleClassSelect(selectElement, source) {
+      if (selectElement.value === '__manage__') {
+        openClassManager();
+        selectElement.value = '';
+      }
+    }
+
+    function openClassManager() {
+      loadClassesInModal();
+      openModal('classManagerModal');
+    }
+
+    function loadClassesInModal() {
+      const classes = Storage.getClasses();
+      const tbody = document.getElementById('classesTable');
+      tbody.innerHTML = '';
+
+      if (classes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="color: var(--text-light);">No classes found. Add a class above.</td></tr>';
+        return;
+      }
+
+      classes.forEach(cls => {
+        const studentCount = Storage.getStudents().filter(s => s.classId == cls.id).length;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>${cls.name}</strong></td>
+          <td>${cls.section}</td>
+          <td>${cls.year}</td>
+          <td><span class="badge badge-success">${studentCount}</span></td>
+          <td style="text-align: right;">
+            <button class="btn btn-danger btn-sm" onclick="deleteClass(${cls.id})">🗑 Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function addClassFromModal(e) {
+      e.preventDefault();
+      const classes = Storage.getClasses();
+
+      const name = document.getElementById('className').value.trim();
+      const section = document.getElementById('classSection').value.trim();
+      const year = document.getElementById('classYear').value.trim();
+
+      classes.push({
+        id: Date.now(),
+        name,
+        section,
+        year
+      });
+
+      Storage.setClasses(classes);
+      showAlert('Class added successfully!', 'success');
+
+      document.getElementById('className').value = '';
+      document.getElementById('classSection').value = '';
+      document.getElementById('classYear').value = '';
+
+      loadClassesInModal();
+      populateAllClassDropdowns();
+    }
+
+    function deleteClass(classId) {
+      if (!confirm('Delete this class? All students in this class will also be deleted.')) return;
+
+      const students = Storage.getStudents().filter(s => s.classId != classId);
+      Storage.setStudents(students);
+
+      const classes = Storage.getClasses().filter(c => c.id !== classId);
+      Storage.setClasses(classes);
+
+      showAlert('Class deleted successfully!', 'success');
+      loadClassesInModal();
+      populateAllClassDropdowns();
+      loadAttendance();
+    }
+  </script>
+
+  <!-- Class Management Modal -->
+  <div class="modal-overlay" id="classManagerModal">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-title">🏫 Manage Classes</div>
+        <button class="modal-close" onclick="closeModal('classManagerModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form onsubmit="addClassFromModal(event)" style="margin-bottom: 1.5rem; padding: 1rem; background: var(--bg); border-radius: 12px;">
+          <div style="display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 150px;">
+              <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block;">Class Name</label>
+              <input type="text" class="form-control" id="className" required placeholder="e.g. Computer Science">
+            </div>
+            <div style="width: 80px;">
+              <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block;">Section</label>
+              <input type="text" class="form-control" id="classSection" required placeholder="A">
+            </div>
+            <div style="width: 100px;">
+              <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; display: block;">Year</label>
+              <input type="text" class="form-control" id="classYear" required placeholder="2024-25">
+            </div>
+            <button type="submit" class="btn btn-primary" style="height: 42px;">+ Add</button>
+          </div>
+        </form>
+
+        <div class="table-container" style="border: 1px solid var(--border); border-radius: 12px; overflow: hidden;">
+          <table>
+            <thead>
+              <tr>
+                <th>Class Name</th>
+                <th>Section</th>
+                <th>Year</th>
+                <th>Students</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="classesTable">
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('classManagerModal')">Close</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
